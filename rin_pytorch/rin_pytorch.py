@@ -1,5 +1,6 @@
 from typing import Union
 
+import PIL
 import math
 from pathlib import Path
 from random import random
@@ -27,6 +28,9 @@ from ema_pytorch import EMA
 from accelerate import Accelerator
 
 import wandb
+from PIL import Image as PILImage
+
+from dataset.cifar10 import Cifar10Dataset
 
 
 # helpers functions
@@ -1042,13 +1046,20 @@ class Trainer(object):
                             all_images_list = list(map(lambda n: self.ema.ema_model.sample(batch_size=n), batches))
 
                         all_images = torch.cat(all_images_list, dim=0)
+
+                        if isinstance(self.ds, Cifar10Dataset):
+                            # undo normalization: T.Normalize((0.4915, 0.4823, 0.4468), (0.247, 0.2435, 0.2616))
+                            all_images = all_images * torch.tensor([0.247, 0.2435, 0.2616]).view(1, 3, 1, 1).to(device)
+                            all_images = all_images + torch.tensor([0.4915, 0.4823, 0.4468]).view(1, 3, 1, 1).to(device)
+
                         utils.save_image(all_images, str(self.results_folder / f'sample-{milestone}.png'),
                                          nrow=int(math.sqrt(self.num_samples)))
                         self.save(milestone)
 
                         # Log images with wandb
                         try:
-                            wandb_images = [wandb.Image(img) for img in all_images]
+                            all_images = all_images.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
+                            wandb_images = [wandb.Image(PILImage.fromarray(img)) for img in all_images]
                             wandb.log({"generated_images": wandb_images, "step": self.step})
                         except Exception as e:
                             print(e)
