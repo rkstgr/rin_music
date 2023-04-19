@@ -45,10 +45,10 @@ class Cifar10Dataset(Dataset):
             T.ToPILImage(),
             T.Resize(self.image_size) if self.image_size != 32 else Identity(),
             T.RandomHorizontalFlip(p=1.0) if augment_horizontal_flip else Identity(),
-            T.RandomApply([T.ColorJitter(0.8, 0.8, 0.8, 0.2)], p=0.2) if split == 'train' else Identity(),
+            # T.RandomApply([T.ColorJitter(0.8, 0.8, 0.8, 0.2)], p=0.2) if split == 'train' else Identity(),
             T.ToTensor(),
             T.ConvertImageDtype(convert_image_to) if convert_image_to is not None else Identity(),
-            T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+            T.Normalize((0.4915, 0.4823, 0.4468), (0.247, 0.2435, 0.2616))
             # normalize using cifar-10 dataset mean and std
         ])
 
@@ -58,7 +58,7 @@ class Cifar10Dataset(Dataset):
     def __getitem__(self, index):
         img = self.data[index]
         label = self.labels[index]
-        return self.transform(img), label # [3, 32, 32]
+        return self.transform(img)  # , label  # [3, 32, 32]
 
     def load_cifar10_batches(self, split):
         if split == 'train':
@@ -98,3 +98,4 @@ if __name__ == "__main__":
     )
 
     print(dataset[0][0].shape)
+    print(dataset[0][1])
