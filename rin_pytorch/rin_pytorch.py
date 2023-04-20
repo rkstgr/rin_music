@@ -964,7 +964,7 @@ class Trainer(object):
             self.results_folder = Path(results_folder)
             self.results_folder.mkdir(exist_ok=True)
 
-            wandb.init(project=wandb_project_name, name=wandb_run_name)
+            wandb.init(project=wandb_project_name, name=wandb_run_name, config=locals())
             wandb.watch(self.model)
 
         # step counter state
